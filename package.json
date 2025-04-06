@@ -18,9 +18,13 @@
     "sqltoknex",
     "sql-to-knex"
   ],
-  "author": "",
+  "author": "Esima",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
+  },
+  "homepage": "https://github.com/your-username/sqlToKnex#readme",
+  "bugs": {
+    "url": "https://github.com/your-username/sqlToKnex/issues"
   }
 }
