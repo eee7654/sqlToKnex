@@ -23,8 +23,8 @@
   "engines": {
     "node": ">=14.0.0"
   },
-  "homepage": "https://github.com/your-username/sqlToKnex#readme",
+  "homepage": "https://github.com/eee7654/sqlToKnex#readme",
   "bugs": {
-    "url": "https://github.com/your-username/sqlToKnex/issues"
+    "url": "https://github.com/eee7654/sqlToKnex/issues"
   }
 }
