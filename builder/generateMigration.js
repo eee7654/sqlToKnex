@@ -19,16 +19,17 @@ export function generateMigration({ tableName, columns, indexes }) {
   const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const fileName = `${timestamp}_create_${tableName}_table.js`;
   const outputPath = path.join('migrations', fileName);
-
-  // شناسایی ستون‌هایی که توی INDEX ها unique هستند
+  
   const uniqueColumnsFromIndexes = new Set();
   (indexes || []).forEach((idx) => {
-    if (/unique/i.test(idx.indexName) && idx.columns.length === 1) {
-      uniqueColumnsFromIndexes.add(idx.columns[0]);
+    if (idx.isUnique) {
+      idx.columns.forEach(col => uniqueColumnsFromIndexes.add(col));
     }
   });
 
   const columnDefinitions = columns.map(({ name, type, length, attributes = '', enumValues }) => {
+    if (!name || !type) return '';
+
     let line;
 
     if (/auto_increment/i.test(attributes)) {
@@ -37,7 +38,7 @@ export function generateMigration({ tableName, columns, indexes }) {
       line = `table.enu('${name}', ${JSON.stringify(enumValues)})`;
     } else {
       const knexType = knexTypes[type];
-      if (!knexType) return `// ⚠️ نوع ناشناخته: ${type} → ${name}\ntable.specificType('${name}', '${type}')`;
+      if (!knexType) return `// ⚠️ unhandled type: ${type} → ${name}\ntable.specificType('${name}', '${type}')`;
       line = `table.${knexType}('${name}'${length ? `, ${length}` : ''})`;
     }
 
@@ -77,8 +78,8 @@ export function generateMigration({ tableName, columns, indexes }) {
     return line + ';';
   });
 
-  const indexDefinitions = (indexes || []).map(({ indexName, columns }) => {
-    if (/unique/i.test(indexName)) return ''; // چون بالاتر به `.unique()` اضافه کردیم
+  const indexDefinitions = (indexes || []).map(({ indexName, columns, isUnique }) => {
+    if (isUnique) return '';
     return `table.index([${columns.map((col) => `'${col}'`).join(', ')}], '${indexName}');`;
   }).filter(Boolean);
 
@@ -95,5 +96,5 @@ exports.down = function(knex) {
 `;
 
   fs.writeFileSync(outputPath, migrationContent);
-  console.log(`✅ فایل Migration در مسیر: ${outputPath} ذخیره شد.`);
+  console.log(`✅ Migration File saved at: ${outputPath}`);
 }
