@@ -16,28 +16,52 @@ export function parseSQL(sql) {
   const indexes = [];
 
   lines.forEach(line => {
-    if (/^PRIMARY KEY/i.test(line)) {
-      return; // ازش رد شو چون توی ستون‌ها هندل شده
+    // PRIMARY KEY → نادیده بگیر چون توی attributes هندل می‌کنیم
+    if (/^PRIMARY KEY/i.test(line)) return;
+
+    // UNIQUE INDEX یا KEY
+    const uniqueIndexMatch = line.match(/^(UNIQUE\s+)?KEY\s+(\w+)\s*\(([^)]+)\)/i);
+    if (uniqueIndexMatch) {
+      const isUnique = !!uniqueIndexMatch[1];
+      const indexName = uniqueIndexMatch[2];
+      const columnList = uniqueIndexMatch[3].split(',').map(c => c.trim());
+      indexes.push({
+        indexName: isUnique ? `unique_${indexName}` : indexName,
+        columns: columnList,
+      });
+      return;
     }
-    
-    if (/^KEY/i.test(line)) {
-      const keyMatch = line.match(/^KEY\s+(\w+)\s*\(([^)]+)\)/i);
-      if (keyMatch) {
-        const indexName = keyMatch[1];
-        const columns = keyMatch[2].split(',').map(c => c.trim());
-        indexes.push({ indexName, columns });
+
+    // تعریف ستون
+    const colMatch = line.match(/^(\w+)\s+([a-zA-Z]+(?:\([^)]+\))?)\s*(.*)$/i);
+    if (!colMatch) return;
+
+    const [_, name, typeRaw, rest] = colMatch;
+    const typeLower = typeRaw.toLowerCase();
+    const type = typeLower.replace(/\(.*\)/, '');
+
+    // طول در صورتی که مثلا VARCHAR(255)
+    const lengthMatch = typeRaw.match(/\((\d+)\)/);
+    const length = lengthMatch ? Number(lengthMatch[1]) : null;
+
+    // ENUM values → enum('a', 'b', 'c')
+    let enumValues = null;
+    if (type === 'enum') {
+      const enumMatch = typeRaw.match(/\(([^)]+)\)/);
+      if (enumMatch) {
+        enumValues = enumMatch[1]
+          .split(',')
+          .map(v => v.trim().replace(/^'(.*)'$/, '$1')); // پاک‌کردن کوتیشن
       }
-    } else if (/^(\w+)\s+([\w()]+)(.*)$/i.test(line)) {
-      const colMatch = line.match(/^(\w+)\s+([\w()]+)(.*)$/i);
-      if (!colMatch) return;
-
-      const [_, name, typeRaw, rest] = colMatch;
-      const type = typeRaw.toLowerCase().replace(/\(.*\)/, '');
-      const lengthMatch = typeRaw.match(/\((\d+)\)/);
-      const length = lengthMatch ? Number(lengthMatch[1]) : null;
-
-      columns.push({ name, type, length, attributes: rest });
     }
+
+    columns.push({
+      name,
+      type,
+      length,
+      enumValues,
+      attributes: rest.trim(),
+    });
   });
 
   return { tableName, columns, indexes };
