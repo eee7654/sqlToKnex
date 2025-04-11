@@ -13,13 +13,16 @@ const knexTypes = {
   date: 'date',
 };
 
-export function generateMigration({ tableName, columns, indexes }) {
+export function generateMigration({ tableName, columns, indexes, outputDir = 'migrations' }) {
   const now = new Date();
   const pad = (n) => n.toString().padStart(2, '0');
   const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const fileName = `${timestamp}_create_${tableName}_table.js`;
-  const outputPath = path.join('migrations', fileName);
-  
+
+  const outputPath = path.join(outputDir, fileName);
+
+  fs.mkdirSync(outputDir, { recursive: true });
+
   const uniqueColumnsFromIndexes = new Set();
   (indexes || []).forEach((idx) => {
     if (idx.isUnique) {

@@ -19,11 +19,7 @@ export function parseSQL(sql) {
     const lineRegex = /^(UNIQUE\s+)?(INDEX|KEY)\s+(\w+)\s*\(([^)]+)\)/i;
     const indexMatch = line.match(lineRegex);
     if (indexMatch) {
-      // isUnique = true اگر قسمت اول (UNIQUE ) پر شده باشه
       const isUnique = !!indexMatch[1];
-      // indexMatch[2] = "INDEX" یا "KEY"
-      // indexMatch[3] = نام ایندکس
-      // indexMatch[4] = لیست ستون‌های داخل پرانتز
       const indexName = indexMatch[3];
       const columnsRaw = indexMatch[4];
 
