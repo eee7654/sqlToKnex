@@ -2,7 +2,7 @@ export function parseSQL(sql) {
   const cleanedSQL = sql.replace(/`/g, '');
   const tableMatch = cleanedSQL.match(/CREATE TABLE (\w+)\s*\((.*)\)\s*(ENGINE|CHARSET|COLLATE|AUTO_INCREMENT|;|$)/is);
   if (!tableMatch) {
-    console.error("❌ Command: CREATE TABLE Not Found in sql");
+    console.error("❌ Command: CREATE TABLE Not Found in SQL");
     process.exit(1);
   }
 
@@ -13,28 +13,40 @@ export function parseSQL(sql) {
 
   const columns = [];
   const indexes = [];
+  const foreignKeys = [];
 
   lines.forEach(line => {
     if (/^PRIMARY KEY/i.test(line)) return;
-    const lineRegex = /^(UNIQUE\s+)?(INDEX|KEY)\s+(\w+)\s*\(([^)]+)\)/i;
-    const indexMatch = line.match(lineRegex);
+
+    // ✅ Detect INDEX/UNIQUE
+    const indexMatch = line.match(/^(UNIQUE\s+)?(INDEX|KEY)\s+(\w+)\s*\(([^)]+)\)/i);
     if (indexMatch) {
       const isUnique = !!indexMatch[1];
       const indexName = indexMatch[3];
-      const columnsRaw = indexMatch[4];
-
-      const columnList = columnsRaw
+      const columnList = indexMatch[4]
         .split(',')
-        .map((c) => c.replace(/\s+(ASC|DESC)/i, '').trim());
+        .map(c => c.replace(/\s+(ASC|DESC)/i, '').trim());
+      indexes.push({ indexName, columns: columnList, isUnique });
+      return;
+    }
 
-      indexes.push({
-        indexName,
-        columns: columnList,
-        isUnique,
+    // ✅ Detect FOREIGN KEY
+    const fkMatch = line.match(/FOREIGN KEY\s*\((\w+)\)\s+REFERENCES\s+(\w+)\s*\((\w+)\)(?:\s+ON DELETE (\w+))?(?:\s+ON UPDATE (\w+))?/i);
+    if (fkMatch) {
+      const [, column, refTable, refColumn, onDelete, onUpdate] = fkMatch;
+      foreignKeys.push({
+        column,
+        references: {
+          table: refTable,
+          column: refColumn,
+        },
+        ...(onDelete && { onDelete: onDelete.toUpperCase() }),
+        ...(onUpdate && { onUpdate: onUpdate.toUpperCase() }),
       });
       return;
     }
 
+    // ✅ Detect Column
     const colMatch = line.match(/^(\w+)\s+([a-zA-Z]+(?:\([^)]+\))?)\s*(.*)$/i);
     if (!colMatch) return;
 
@@ -63,5 +75,6 @@ export function parseSQL(sql) {
       attributes: rest.trim(),
     });
   });
-  return { tableName, columns, indexes };
+
+  return { tableName, columns, indexes, foreignKeys };
 }

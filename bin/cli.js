@@ -2,7 +2,6 @@
 import { parseSQL } from '../parser/parseSQL.js';
 import { generateMigration } from '../builder/generateMigration.js';
 import fs from 'fs';
-import path from 'path';
 
 const args = process.argv.slice(2);
 
