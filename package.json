@@ -1,6 +1,6 @@
 {
   "name": "sqltoknex",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Convert SQL CREATE TABLE statements to Knex.js migration files",
   "type": "module",
   "main": "src/index.js",
