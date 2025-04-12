@@ -31,7 +31,9 @@ export function parseSQL(sql) {
     }
 
     // ✅ Detect FOREIGN KEY
-    const fkMatch = line.match(/FOREIGN KEY\s*\((\w+)\)\s+REFERENCES\s+(\w+)\s*\((\w+)\)(?:\s+ON DELETE (\w+))?(?:\s+ON UPDATE (\w+))?/i);
+    const fkMatch = line.match(
+      /FOREIGN KEY\s*\((\w+)\)\s+REFERENCES\s+(\w+)\s*\((\w+)\)(?:\s+ON DELETE\s+([A-Z\s]+))?(?:\s+ON UPDATE\s+([A-Z\s]+))?/i
+    );
     if (fkMatch) {
       const [, column, refTable, refColumn, onDelete, onUpdate] = fkMatch;
       foreignKeys.push({
